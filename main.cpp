@@ -15,6 +15,9 @@ int main(){
 	cout << "hello world" << endl;
 
 	for (const auto & val : strs) {
+		if (val == "push") {
+			cout << "push harder!" << endl;
+		}
 		cout << val << endl;
 	}
 
