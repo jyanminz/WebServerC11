@@ -12,7 +12,7 @@ size_t Buffer::WritableBytes() const {
 
 size_t Buffer::PrependableBytes() const {
 	return readPos_;
-}
+}	
 
 const char * Buffer::Peek() const {
 	return BeginPtr_() + readPos_;
