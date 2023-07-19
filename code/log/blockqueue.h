@@ -3,6 +3,7 @@
 #include <mutex>
 #include <deque>
 #include <condition_variable>
+#include <assert.h>
 #include <sys/time.h>
 
 template<typename T>
@@ -53,18 +54,18 @@ private:
 };
 
 template<typename T> 
-BlockDeque<T>::BlockDeque(size_t MaxCapacity) : capacity(MaxCapacity) {
+BlockDeque<T>::BlockDeque(size_t MaxCapacity) : capacity_(MaxCapacity) {
 	assert(MaxCapacity > 0);
 	IsClose_ = false;
 }
 
 template<typename T>
 BlockDeque<T>::~BlockDeque(){
-	Close();
+	close();
 }
 
 template<typename T>
-void BlockDeque<T>::Close(){
+void BlockDeque<T>::close(){
 	{
 		std::lock_guard<std::mutex> locker(mtx_);
 		deq_.clear();

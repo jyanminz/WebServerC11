@@ -37,7 +37,7 @@ public:
 	bool process();
 
 	int ToWriteBytes() {
-		return iov_[0].iov_len + iov[1].iov_len;
+		return iov_[0].iov_len + iov_[1].iov_len;
 	}
 
 	bool IsKeepAlive() const {

@@ -36,7 +36,7 @@ public:
 private:
 	Log();
 
-	void AppendLogLevelTitile_(int level);
+	void AppendLogLevelTitle_(int level);
 
 	virtual ~Log();
 
@@ -75,7 +75,7 @@ private:
 
 #define LOG_BASE(level, format, ...) \
 	do{ \
-		Log* log = Log:Instance();
+		Log* log = Log:Instance(); \
 		if (log->IsOpen() && log->GetLevel() <= level) { \
 			log->write(level, format, ##__VA_ARGS__); \
 			log->flush(); \

@@ -8,7 +8,7 @@
 #include<utility>
 #include<vector>
 
-#include "SafeQueue"
+#include "SafeQueue.h"
 
 class ThreadPool {
 private:
@@ -26,7 +26,7 @@ private:
 
 			while (!m_pool->IsClosed){
 				{
-					std::lock_guard<std::mutex> lock(m_pool->m_mtx);
+					std::unique_lock<std::mutex> lock(m_pool->m_mtx);
 					if (m_pool->m_queue.empty()) {
 						m_pool->m_cond.wait(lock);
 					}
@@ -47,7 +47,7 @@ private:
 	std::condition_variable m_cond;
 
 public:
-	ThreadPool(const int ThreadCounts = 8) : m_threads(std::std::vector<std::thread>(ThreadCounts)), IsClosed(false) {}
+	ThreadPool(const int ThreadCounts = 8) : m_threads(std::vector<std::thread>(ThreadCounts)), IsClosed(false) {}
 
 	ThreadPool(const ThreadPool &) = delete;
 	
@@ -55,12 +55,12 @@ public:
 
 	void init() {
 		for (int i = 0; i < m_threads.size(); i++) {
-			m_threads[i] = std:thread(ThreadWorker(this, i));
+			m_threads[i] = std::thread(ThreadWorker(this, i));
 		}
 	}
 
 	void shutdown() {
-		m_shutdown = true;
+		IsClosed = true;
 		m_cond.notify_all();
 
 		for (int i = 0; i < m_threads.size(); i++) {
@@ -72,11 +72,11 @@ public:
 
 	template<typename F, typename...Args>
 	auto AddTask(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
-		std::funtion<decltype<(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+		std::function<decltype(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
 
 		auto task_ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(func);
 
-		std::funtion<void()> wrapper_func = [task_ptr](){
+		std::function<void()> wrapper_func = [task_ptr](){
 			(*task_ptr)();
 		};
 

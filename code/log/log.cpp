@@ -16,7 +16,7 @@ Log::~Log() {
 		while(!deque_->empty()) {
 			deque_->flush();
 		}
-		deque_->Close();
+		deque_->close();
 		writeThread_->join();
 	}
 	if (fp_) {
@@ -42,7 +42,7 @@ void Log::init(int level = 1, const char * path, const char * suffix, int maxQue
 	if (maxQueueSize > 0) {
 		isAsync_ = true;
 		if (!static_cast<bool>(deque_)) {
-			std::unique_ptr<std::string>> newDeque(new BlockDeque<std::string>);
+			std::unique_ptr<BlockDeque<std::string>> newDeque(new BlockDeque<std::string>);
 			deque_ = move(newDeque);
 
 			std::unique_ptr<std::thread> NewThread(new thread(FlushLogThread));
@@ -57,7 +57,7 @@ void Log::init(int level = 1, const char * path, const char * suffix, int maxQue
 
 	time_t timer = time(nullptr);
 
-	struct tm * sysTime = localtime($timer);
+	struct tm * sysTime = localtime(&timer);
 
 	struct tm t = *sysTime;
 
@@ -111,7 +111,7 @@ Log* Log::Instance() {
 }
 
 void Log::FlushLogThread() {
-	Log::Instance()->AsyncWrite();
+	Log::Instance()->AsyncWrite_();
 }
 
 void Log::AppendLogLevelTitle_(int level) {
@@ -145,7 +145,7 @@ void Log::write(int level, const char * format, ...) {
 	va_list vaList;
 
 	if (toDay_ != t.tm_mday || (lineCount_ && (lineCount_ % MAX_LINES == 0))) {
-		std::unique_ptr<std::mutex> locker(mtx_);
+		std::unique_lock<std::mutex> locker(mtx_);
 		locker.unlock();
 
 		char newFile[LOG_NAME_LEN];
@@ -169,7 +169,7 @@ void Log::write(int level, const char * format, ...) {
 	}
 
 	{
-		std::unique_ptr<std::mutex> locker(mtx_);
+		std::unique_lock<std::mutex> locker(mtx_);
 		lineCount_++;
 		int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
 					t.tm_year + 1900, t.tm_mon+1, t.tm_mday,
@@ -179,14 +179,14 @@ void Log::write(int level, const char * format, ...) {
 		AppendLogLevelTitle_(level);
 
 		va_start(vaList, format);
-		int m = vsnprintf(buff_.BeginWrite(), buff_WritableBytes(), format, vaList);
+		int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
 		va_end(vaList);
 
 		buff_.HasWritten(m);
 		buff_.Append("\n\0", 2);
 
 		if (isAsync_ && static_cast<bool>(deque_) && !deque_->full()){
-			deque->push_back(buff_.RetrieveAllToStr());
+			deque_->push_back(buff_.RetrieveAllToStr());
 		}
 		else {
 			fputs(buff_.Peek(), fp_);

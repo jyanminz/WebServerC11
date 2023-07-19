@@ -6,36 +6,36 @@ const char * HttpConn::srcDir;
 
 std::atomic<int> HttpConn::userCount;
 
-bool HttpConn::IsEt;
+bool HttpConn::IsET;
 
 HttpConn::HttpConn() {
 	fd_ = -1;
 	addr_ = {0};
-	IsClose_ = true;
+	isClose_ = true;
 }
 
 HttpConn::~HttpConn() {
 	Close();
 }
 
-void HttpConn::Init(int fd, const sockaddr_in & addr) {
+void HttpConn::init(int fd, const sockaddr_in & addr) {
 	assert(fd > 0);
 	userCount++;
 	addr_ = addr;
 	fd_ = fd;
 	writeBuff_.RetrieveAll();
 	readBuff_.RetrieveAll();
-	IsClose_ = false;
-	LOG_INFO("CLIENT[%d](%s:%d) in, userCount:%d", fd_, GetIP(), GetPort(), int(userCount));
+	isClose_ = false;
+	LOG_INFO("CLIENT[%d](%s:%d) in, user_Count:%d", fd_, GetIP(), GetPort(), int(userCount));
 }
 
 void HttpConn::Close() {
 	response_.UnmapFile();
-	if (IsClose_ == false) {
-		IsClose_ = true;
+	if (isClose_ == false) {
+		isClose_ = true;
 		userCount--;
 		close(fd_);
-		LOG_INFO("CLIENT[%d](%s:%d) quit, userCount:%d", fd_, GetIP(), GetPort(), int(userCount));
+		LOG_INFO("CLIENT[%d](%s:%d) quit, user_Count:%d", fd_, GetIP(), GetPort(), int(userCount));
 	}
 }
 
@@ -48,7 +48,7 @@ struct sockaddr_in HttpConn::GetAddr() const {
 }
 
 const char * HttpConn::GetIP() const {
-	return addr_.sin_port;
+	return inet_ntoa(addr_.sin_addr);
 }
 
 ssize_t HttpConn::read(int* saveErrno) {
@@ -114,13 +114,11 @@ bool HttpConn::process() {
 	iovCnt_ = 1;
 
 	if (response_.FileLen() > 0 && response_.File()) {
-		iov[1].iov_base = response_.File();
-		iov[1].iov_len = response_.FileLen();
+		iov_[1].iov_base = response_.File();
+		iov_[1].iov_len = response_.FileLen();
 		iovCnt_ = 2;
 	}
-	LOG_DEBUG("FILESIZE:%d, %d to %d", response_.FileLen(), iovCnt_, ToWriteBytes());
+	LOG_DEBUG("FILE_SIZE:%d, %d to %d", response_.FileLen(), iovCnt_, ToWriteBytes());
 	return true;
 }
-
-
 

@@ -1,5 +1,6 @@
 #include "buffer.h"
 
+
 Buffer::Buffer(int initBufferSize) : readPos_(0), writePos_(0), buffer_(initBufferSize) {}
 
 size_t Buffer::ReadableBytes() const {
